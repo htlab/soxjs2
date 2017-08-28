@@ -3,7 +3,7 @@ var SoxConnection = require("../lib/sox_connection");
 var soxConfig = {  // FIXME
     boshService: "http://sox.ht.sfc.keio.ac.jp:5280/http-bind/",
     jid: "guest@sox.ht.sfc.keio.ac.jp",
-    password: "miroguest"
+    password: "xxxx"
 };
 
 // *** user login
