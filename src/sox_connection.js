@@ -333,10 +333,6 @@ class SoxConnection {
   }
 
   _getSubscription(node, domain, cb) {
-
-    //   let iq2 = $iq({ type: "get", from: that._rawConn.jid, to: service, id: uniqueId })
-    //     .c("pubsub", { xmlns: PUBSUB_NS })
-    //     .c("items", { node: node, max_items: 1 });
     // <iq type='get'
     //     from='francisco@denmark.lit/barracks'
     //     to='pubsub.shakespeare.lit'
@@ -352,17 +348,10 @@ class SoxConnection {
       .c("subscriptions");
 
     let suc = (iq) => {
-      // console.log("get sub ok");
-      // XmlUtil.dumpDom(iq);
       let converted = XmlUtil.convSubscriptions(iq);
-      // console.log("converted ok");
       cb(converted);
-
     };
-    let err = (iq) => {
-      // console.log("get sub failed");
-
-    };
+    let err = (iq) => { };
 
     this._rawConn.sendIQ(iq, suc, err);
   }
@@ -382,81 +371,19 @@ class SoxConnection {
     // https://github.com/strophe/strophejs-plugin-pubsub/blob/master/strophe.pubsub.js#L297
     let jid = this.getJID();
     let service = "pubsub." + domain;
-    // let iq = $iq({from: jid, to: service, type:'get'})
-    //   .c('query', { xmlns: Strophe.Strophe.NS.DISCO_ITEMS });
     let iq = $iq({ from: jid, to: service, type: "get", id: this._rawConn.getUniqueId("pubsub") }).c(
       'query', { xmlns: Strophe.Strophe.NS.DISCO_ITEMS }
     );
 
     let that = this;
     let success = (msg) => {
-
-      // DEBUG
-      // let s = msg.toString();
-      // console.log("@@@@@ inside success of fetchDevices");
-      // console.log("typeof(msg)=" + String(typeof(msg)));
-      // console.log(JSON.stringify(Object.keys(msg)));
-      // // console.log(msg._childNodesList.length);
-      // // for (var i = 0; i < msg._childNodesList.length; i++) {
-      // //   var cn = msg._childNodesList[i];
-      // //   console.log("---child node " + String(i));
-      // //   console.log(String(cn));
-      // //   console.log(i);
-      // //   console.log(JSON.stringify(Object.keys(cn)));
-      // // }
-      //
-      // let query = msg._childNodesList[0];
-      // console.log("-----query");
-      // let dumpChildInfo = (x, indent) => {
-      //   if (!indent) {
-      //     indent = 0;
-      //   }
-      //   var ind = "";
-      //   for (var j = 0; j < indent; j++) {
-      //     ind = ind + "  ";
-      //   }
-      //
-      //   if (x._childNodesList.length === 0) {
-      //     console.log("_localName=" + x._localName + ", _attributes=" + String(Object.keys(x._attributes)));
-      //
-      //   }
-      //
-      //   console.log(x._childNodesList.length);
-      //   for (var i = 0; i < x._childNodesList.length; i++) {
-      //     var cn = x._childNodesList[i];
-      //     console.log(ind + "---child node " + String(i));
-      //     console.log(ind + String(cn));
-      //     console.log(ind + String(i));
-      //     console.log(ind + JSON.stringify(Object.keys(cn)));
-      //   }
-      // }
-      // console.log("---item0");
-      // dumpChildInfo(query);
-      //
-      // var item0 = query._childNodesList[0];
-      // dumpChildInfo(item0);
-      //
-      //
-      // // console.log("typeof(msg[0])=" + String(typeof(msg[0])));
-      // console.log("---toString() result");
-      // if (1000 < s.length) {
-      //   console.log(s.substring(0, 1000));
-      // } else {
-      //   console.log(s);
-      // }
-      // // DEBUG END
       let query = msg._childNodesList[0];
       let items = query._childNodesList;
 
       let check = {};
-      // for (let item of items) {
       for (var i = 0; i < items.length; i++) {
         let item = items[i];
-        // console.log("item._attributes=" + Object.keys(item._attributes));
-        // let node = item._attributes.node;
-        // console.log("node=" + Object.keys(node))
         let node = item._attributes.node._valueForAttrModified;
-        // console.log("node=" + node);
         if (SoxUtil.endsWithData(node)) {
           let realNode = SoxUtil.cutDataSuffix(node);
           if (check[realNode] === undefined) {
@@ -474,42 +401,22 @@ class SoxConnection {
         }
       }
 
-      // let deviceNames = [];
       let devices = [];
       for (let deviceName of Object.keys(check)) {
         let c = check[deviceName];
         if (c.data && c.meta) {
           let device = that.bind(deviceName);
           devices.push(device);
-          // deviceNames.push(deviceName);
-          // deviceNames.push(device);
         }
       }
 
       callback(devices);
-
-      // for (let dn of deviceNames) {
-      //   console.log(dn);
-      // }
-      // console.log("---- devices = " + deviceNames.length);
-
-      // SoxUtil.extractDevices(that, msg, callback);
     };
 
     let error = (msg) => {
-      // FIXME
-      // console.log("@@@@ fetchDevices error: " + msg);
     };
 
     return this._rawConn.sendIQ(iq.tree(), success, error, undefined);
-
-
-    // this._rawConn.PubSub.discoverNodes((suc_result) => {
-    //   console.log("discoverNodes: successed: " + suc_result);
-    //
-    // }, (err_result) => {
-    //   console.log("disconverNodes: failed" + err_result);
-    // });
   }
 
   fetchSubscriptions(callback) {
@@ -538,16 +445,8 @@ class SoxConnection {
 
   _subNode(node, domain, requestRecent, callback) {
     // https://github.com/strophe/strophejs-plugin-pubsub/blob/master/strophe.pubsub.js#L297
-    // let service = "pubsub." + device.getDomain();
     let that = this;
     let service = "pubsub." + domain;
-    // this._rawConn.PubSub.subscribe(dataNode);
-    // TODO
-
-    // node list get のときのquery
-    // let iq = $iq({ from: jid, to: service, type: "get", id: this._rawConn.getUniqueId("pubsub") }).c(
-    //   'query', { xmlns: Strophe.Strophe.NS.DISCO_ITEMS }
-    // );
 
     // http://ggozad.com/strophe.plugins/docs/strophe.pubsub.html
     // console.log("@@@@@@@ raw jid = " + this._rawConn.jid);
@@ -555,12 +454,9 @@ class SoxConnection {
     let bareJid = Strophe.Strophe.getBareJidFromJid(this._rawConn.jid);
     let iq = $iq({ to: service, type: "set", id: this._rawConn.getUniqueId("pubsub") })
       .c('pubsub', { xmlns: "http://jabber.org/protocol/pubsub" })
-      // .c('subscribe', {node: node, jid: bareJid});
       .c('subscribe', {node: node, jid: rawJid});
 
     let suc = (iq) => {
-      // console.log("subscribe success? node=" + node);
-
       // https://xmpp.org/extensions/xep-0060.html#subscriber-retrieve-requestrecent
 
       // <iq type='get'
@@ -576,28 +472,19 @@ class SoxConnection {
         let iq2 = $iq({ type: "get", from: that._rawConn.jid, to: service, id: uniqueId })
           .c("pubsub", { xmlns: PUBSUB_NS })
           .c("items", { node: node, max_items: 1 });
-        // that._rawConn.
         let suc2 = (iq) => {
-          // console.log("recent request success?");
           if (callback) {
             callback();
           }
         };
-        let err2 = (iq) => {
-          // console.log("recent request failed?");
-
-        };
+        let err2 = (iq) => { };
         that._rawConn.sendIQ(iq2, suc2, err2);
       } else {
         callback();
       }
     };
-    let err = (iq) => {
-      // console.log("subscribe failed?  " + String(iq));
-      // XmlUtil.dumpDom(iq);
-    };
+    let err = (iq) => { };
     this._rawConn.sendIQ(iq, suc, err);
-
   }
 
   unsubscribe(device, callback) {
