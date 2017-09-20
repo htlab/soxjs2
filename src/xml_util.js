@@ -1,6 +1,12 @@
 
+
+import Device from "./device";
+import DeviceMeta from "./device_meta";
+import MetaTransducer from "./meta_transducer";
+
 var _xmlDeclarePatStr = "^<\\?xml[^>]+?>";
 var _xmlDeclarePat = new RegExp(_xmlDeclarePatStr);
+
 
 let XmlUtil = {
 
@@ -38,6 +44,60 @@ let XmlUtil = {
         XmlUtil.dumpDom(c, indent + 1);
       }
     }
+  },
+
+  convRecentItem: (soxConnection, iq) => {
+    XmlUtil.dumpDom(iq);
+    let fromService = iq._attributes['from']._valueForAttrModified;
+    let fromDomain = fromService.substring(7);
+
+    let pubsubTag = iq._childNodesList[0];
+    let itemsTag = pubsubTag._childNodesList[0];
+    let itemTag = itemsTag._childNodesList[0];
+    let deviceTag = itemTag._childNodesList[0];
+    let transducerTags = deviceTag._childNodesList;
+
+    let getAttr = (attrs, name) => {
+      let v = attrs[name];
+      return (v) ? v._valueForAttrModified : v;
+    };
+
+    // device: name, id, type, serialNumber
+    let deviceTagAttr = deviceTag._attributes;
+    let deviceName = getAttr(deviceTagAttr, 'name');
+    let deviceId = getAttr(deviceTagAttr, 'id');
+    let deviceType = getAttr(deviceTagAttr, 'type');
+    let deviceSerialNumber = getAttr(deviceTagAttr, 'serialNumber');
+
+    // transducer: name, id, canActuate, hasOwnNode, units,
+    //             unitScalar, minValue, maxValue, resolution
+    let device = new Device(soxConnection, deviceName, fromDomain);
+    let transducers = [];
+
+    for (let i = 0; i < transducerTags.length; i++) {
+      let tdrTag = transducerTags[i];
+      if (tdrTag._localName !== 'transducer') {
+        continue;
+      }
+      let tdrAttrs = tdrTag._attributes;
+
+      transducers.push(new MetaTransducer(
+        device,
+        getAttr(tdrAttrs, 'name'),
+        getAttr(tdrAttrs, 'id'),
+        getAttr(tdrAttrs, 'canActuate'),
+        getAttr(tdrAttrs, 'hasOwnNode'),
+        getAttr(tdrAttrs, 'units'),
+        getAttr(tdrAttrs, 'unitScalar'),
+        getAttr(tdrAttrs, 'minValue'),
+        getAttr(tdrAttrs, 'maxValue'),
+        getAttr(tdrAttrs, 'resolution')
+      ));
+    }
+
+    let meta = new DeviceMeta(
+      device, deviceId, deviceType, deviceSerialNumber, transducers);
+    return meta;
   },
 
   convSubscriptions: (iq) => {

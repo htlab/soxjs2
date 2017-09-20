@@ -10,13 +10,14 @@ var soxConfig = {  // FIXME
 var conn = new SoxConnection(soxConfig.boshService, soxConfig.jid, soxConfig.password);
 
 // var deviceName = "kyotoweather";
-var deviceName = "naver";
+// var deviceName = "naver";
+var deviceName = "fujisawaGeoTweets";
 var device = conn.bind(deviceName);
 
 conn.connect(function() {
   console.log("@@@ connected");
   conn.fetchMeta(device, function(meta) {
-      console.log("got meta");
+      console.log("\n\n@!@!@!@!@! got meta");
       var mts = meta.getMetaTransducers();
       for (var i = 0; i < mts.length; i++) {
           var mt = mts[i];

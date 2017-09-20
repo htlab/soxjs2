@@ -267,48 +267,64 @@ class SoxConnection {
       let listenerId = this._genRandomId();
       let metaNode = device.getMetaNodeName();
       let _callback = (meta) => {
-        that._removeMetaListenerWithId(listenerId);
-        that._rawConn.PubSub.unsubscribe(metaNode);
+        that._unsubNode(device.getMetaNodeName(), device.getDomain(), () => {});
         callback(meta);
       }
+      let service = "pubsub." + this.getDomain();
       this._registerMetaListener(device, listenerId, _callback);
-      // this.subscribe(device);
-      // this._subNode(device.getMetaNodeName(), device.getDomain(), true);
-      // let cb = (iq) => {
-      //   console.log("requesting recent item");
-      //   let service = "pubsub." + that.getDomain();
-      //
-      //   // https://xmpp.org/extensions/xep-0060.html#subscriber-retrieve-requestrecent
-      //
-      //   // <iq type='get'
-      //   //     from='francisco@denmark.lit/barracks'
-      //   //     to='pubsub.shakespeare.lit'
-      //   //     id='items2'>
-      //   //   <pubsub xmlns='http://jabber.org/protocol/pubsub'>
-      //   //     <items node='princely_musings' max_items='2'/>
-      //   //   </pubsub>
-      //   // </iq>
-      //   let uniqueId = that._rawConn.getUniqueId("pubsub");
-      //   let iq2 = $iq({ type: "get", from: that._rawConn.jid, to: service, id: uniqueId })
-      //     .c("pubsub", { xmlns: PUBSUB_NS })
-      //     .c("items", { node: node, max_items: 1 });
-      //   // that._rawConn.
-      //   let suc2 = (iq) => {
-      //     console.log("recent request success?");
-      //
-      //   };
-      //   let err2 = (iq) => {
-      //     console.log("recent request failed?");
-      //
-      //   };
-      //   that._rawConn.sendIQ(iq2, suc2, err2);
-      //
-      // };
-      // this._unsubNode(device.getMetaNodeName(), device.getDomain(), cb);
 
-      let cb = (iq) => {
-        // TODO
+      let cb = (subscriptions) => {
+        const jid = that._rawConn.jid;
+        const mySub = subscriptions[jid];
+        if (mySub !== undefined) {
+          const metaNodeSubIDs = mySub[metaNode];
+          const availableSubID = metaNodeSubIDs[0];
 
+          let uniqueId = that._rawConn.getUniqueId("pubsub");
+          let iq2 = $iq({ type: "get", from: jid, to: service, id: uniqueId })
+            .c("pubsub", { xmlns: PUBSUB_NS })
+            .c("items", { node: metaNode, max_items: 1, subid: availableSubID });
+          let suc2 = (iq) => {
+            // console.log("\n\nrecent request success?\n\n");
+          };
+          let err2 = (iq) => {
+            // console.log("\n\nrecent request failed?\n\n");
+          };
+          that._rawConn.sendIQ(iq2, suc2, err2);
+        } else {
+          // first we need to sub
+          // console.log("\n\n\n@@@@@ no our sub info, going to sub!\n\n\n");
+          let rawJid = this._rawConn.jid;
+          let bareJid = Strophe.Strophe.getBareJidFromJid(this._rawConn.jid);
+          let subIq = $iq({ to: service, type: "set", id: this._rawConn.getUniqueId("pubsub") })
+            .c('pubsub', { xmlns: "http://jabber.org/protocol/pubsub" })
+            .c('subscribe', {node: metaNode, jid: rawJid});
+
+          const subSuc = (iq) => {
+            // console.log("\n\n@@@@ sub success, going to fetch subscriptions to get subid");
+            that._getSubscription(device.getMetaNodeName(), device.getDomain(), (subscriptions2) => {
+              const mySub2 = subscriptions2[jid];
+              const metaNodeSubIDs2 = mySub2[metaNode];
+              const availableSubID2 = metaNodeSubIDs2[0];
+
+              let uniqueId3 = that._rawConn.getUniqueId("pubsub");
+              let iq3 = $iq({ type: "get", from: jid, to: service, id: uniqueId3 })
+                .c("pubsub", { xmlns: PUBSUB_NS })
+                .c("items", { node: metaNode, max_items: 1, subid: availableSubID2 });
+
+              const suc3 = (iq) => {
+                const meta = XmlUtil.convRecentItem(that, iq);
+                _callback(meta);
+              };
+              const err3 = (iq) => {
+                // console.log("\n\n@@@@@ recent request error? 3\n\n");
+              };
+
+              that._rawConn.sendIQ(iq3, suc3, err3);
+            });
+          }
+          that._rawConn.sendIQ(subIq, subSuc, () => {});
+        }
       };
       this._getSubscription(device.getMetaNodeName(), device.getDomain(), cb);
     } catch(e) {
