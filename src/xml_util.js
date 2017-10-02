@@ -8,7 +8,7 @@ var _xmlDeclarePatStr = "^<\\?xml[^>]+?>";
 var _xmlDeclarePat = new RegExp(_xmlDeclarePatStr);
 
 
-let XmlUtil = {
+const XmlUtil = {
 
   removeXmlDeclaration: (xmlString) => {
     return xmlString.replace(_xmlDeclarePat, "");

@@ -1,11 +1,12 @@
 import nodeStrophe from "node-strophe";
 
-let Strophe = nodeStrophe.Strophe;
+const Strophe = nodeStrophe.Strophe;
 
-let $pres = Strophe.$pres;
-let $iq = Strophe.$iq;
+const $pres = Strophe.$pres;
+const $iq = Strophe.$iq;
 
-let PUBSUB_NS = "http://jabber.org/protocol/pubsub";
+const PUBSUB_NS = "http://jabber.org/protocol/pubsub";
+const PUBSUB_OWNER_NS = "http://jabber.org/protocol/pubsub#owner";
 
 import parseString from "xml2js";
 
@@ -27,13 +28,13 @@ class SoxConnection {
   }
 
   _stropheOnRawInput(data) {
-    // console.log("<<<<<< input");
-    // console.log(data);
+    console.log("<<<<<< input");
+    console.log(data);
   }
 
   _stropheOnRawOutput(data) {
-    // console.log(">>>>>> output");
-    // console.log(data);
+    console.log(">>>>>> output");
+    console.log(data);
   }
 
   _stropheOnConnConnecting() {
@@ -290,8 +291,9 @@ class SoxConnection {
           let err2 = (iq) => {
             // console.log("\n\nrecent request failed?\n\n");
           };
-          that._rawConn.sendIQ(iq2, suc2, err2);
-        } else {
+          that._rawConn.sendIQ(iq2, suc2, err2);do {
+
+          } while (true); } else {
           // first we need to sub
           // console.log("\n\n\n@@@@@ no our sub info, going to sub!\n\n\n");
           let rawJid = this._rawConn.jid;
@@ -580,23 +582,98 @@ class SoxConnection {
     });
   }
 
-  createDevice(device, meta) {
-    // create "_data" and "_meta" nodes
-    let dataNode = device.getDataNodeName();
-    this._rawConn.PubSub.createNode(dataNode);
-    let metaNode = device.getMetaNodeName();
-    this._rawConn.PubSub.createNode(metaNode);
+  createDevice(device, meta, cbSuccess, cbFailed) {
+    const domain = device.getDomain();
+    const metaNode = device.getMetaNodeName();
+    const dataNode = device.getDataNodeName();
+    const that = this;
+    this._createNode(
+        metaNode,
+        domain,
+        (iq) => {
+          this._createNode(dataNode, domain, (iq2) => {
+            // TODO: send meta to meta node
 
-    // publish meta data
-    let metaXmlString = meta.toXmlString();
-    this._rawConn.PubSub.publish(metaNode, [metaXmlString]);
+          }, cbFailed);
+        },
+        cbFailed
+    );
   }
 
-  deleteDevice(device) {
-    let dataNode = device.getDataNodeName();
-    this._rawConn.PubSub.deleteNode(dataNode);
-    let metaNode = device.getMetaNodeName();
-    this._rawConn.PubSub.deleteNode(metaNode);
+  _createNode(nodeName, domain, cbSuccess, cbFailed) {
+    console.log("\n\n---- _createNode");
+    const service = 'pubsub.' + domain;
+    const conn = this._rawConn;
+    const uniqueId = conn.getUniqueId('pubsub');
+    console.log("\n\n---- _createNode2");
+    try {
+      const iq = $iq({ to: service, type: 'set', id: uniqueId, from: conn.jid })
+        .c('pubsub', { xmlns: PUBSUB_NS })
+        .c('create', { node: nodeName });
+      console.log("\n\n---- _createNode3");
+
+      conn.sendIQ(iq, cbSuccess, cbFailed);
+      console.log("\n\n---- _createNode4");
+    } catch (e) {
+      console.log(e.stack);
+    }
+  }
+
+  _deleteNode(nodeName, domain, cbSuccess, cbFailed) {
+    const service = 'pubsub.' + domain;
+    const conn = this._rawConn;
+    const uniqueId = conn.getUniqueId('pubsub');
+    // const bareJid = Strophe.Strophe.getBareJidFromJid(conn.jid);
+    // const fromJid = conn.
+    const iq = (
+    // const iq = $iq({ to: service, type: 'set', id: uniqueId, from: bareJid })
+      $iq({ to: service, type: 'set', id: uniqueId, from: conn.jid })
+      .c('pubsub', { xmlns: PUBSUB_OWNER_NS })
+      .c('delete', { node: nodeName })
+    );
+
+    conn.sendIQ(iq, cbSuccess, cbFailed);
+  }
+
+  _publishToNode(nodeName, domain, publishContent, cbSuccess, cbFailed) {
+    // expects publishContent as an instance of DeviceMeta or Data
+    try {
+        const service = 'pubsub.' + domain;
+        const conn = this._rawConn;
+        const uniqueId = conn.getUniqueId('pubsub');
+        const itemUniqueId = conn.getUniqueId('item');
+        const iq = (
+          $iq({ to: service, type: 'set', id: uniqueId, from: conn.jid })
+          .c('pubsub', { xmlns: PUBSUB_NS })
+          .c('publish', { node: nodeName })
+          .c('item', { id: itemUniqueId })
+          // .cnode(publishContent)
+        );
+
+        publishContent.appendToNode(iq);
+
+        conn.sendIQ(iq, cbSuccess, cbFailed);
+
+    } catch (e) {
+        console.error(e.stack);
+
+    }
+  }
+
+  deleteDevice(device, cbSuccess, cbFailed) {
+    // // TODO; このコードは動作確認できてない
+    const domain = device.getDomain();
+    const metaNode = device.getMetaNodeName();
+    const dataNode = device.getDataNodeName();
+    const that = this;
+    this._deleteNode(
+      metaNode,
+      domain,
+      (iq) => {
+        that._deleteNode(dataNode, cbSuccess, cbFailed);
+      },
+      cbFailed
+    );
   }
 
   publish(device, data) {

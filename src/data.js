@@ -65,6 +65,16 @@ class Data {
     return trimmedXmlStr;
   }
 
+  appendToNode(node) {
+    const ret = node.c('data', { xmlns: 'http://jabber.org/protocol/sox' });
+
+    for (const tv of this.transducerValues) {
+      ret.c('transducerValue', tv.getXmlAttrs()).up();
+    }
+
+    return ret;
+  }
+
 }
 
 

@@ -28,15 +28,16 @@ class TransducerValue {
 
   _getContentForXmlBuild() {
     // build content for xml2js.Builder
-    let ts = this.timestamp.toISOString();
+    return { '$': this.getXmlAttrs() };
+  }
 
+  getXmlAttrs() {
+    let ts = this.timestamp.toISOString();
     return {
-      '$': {
-        'id': this.transducerId,
-        'rawValue': this.rawValue,
-        'typedValue': this.typedValue,
-        'timestamp': ts
-      }
+      'id': this.transducerId,
+      'rawValue': this.rawValue,
+      'typedValue': this.typedValue,
+      'timestamp': ts
     };
   }
 

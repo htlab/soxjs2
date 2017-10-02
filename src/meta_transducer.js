@@ -54,8 +54,7 @@ class MetaTransducer {
     return this.resolution;
   }
 
-  _getContentForXmlBuild() {
-    // build content for xml2js.Builder()
+  getXmlAttrs() {
     let attrs = {
         name: this.name,
         id: this.tdrId,
@@ -88,7 +87,12 @@ class MetaTransducer {
       attrs.resolution = this.resolution;
     }
 
-    return { '$': attrs };
+    return attrs;
+  }
+
+  _getContentForXmlBuild() {
+    // build content for xml2js.Builder()
+    return { '$': this.getXmlAttrs() };
   }
 
 }

@@ -1,5 +1,8 @@
 import xml2js from 'xml2js';
-import XmlUtil from './xml_util';
+// import XmlUtil from './xml_util';
+
+const _xmlDeclarePatStr = "^<\\?xml[^>]+?>";
+const _xmlDeclarePat = new RegExp(_xmlDeclarePatStr);
 
 class DeviceMeta {
 
@@ -9,6 +12,14 @@ class DeviceMeta {
     this.deviceType = deviceType;
     this.serialNumber = serialNumber;
     this.metaTransducers = metaTransducers;
+  }
+
+  getXmlAttrs() {
+    return {
+      id: this.deviceId,
+      type: this.deviceType,
+      serialNumber: this.serialNumber
+    };
   }
 
   getDevice() {
@@ -53,14 +64,27 @@ class DeviceMeta {
   }
 
   toXmlString() {
-    let builder = new xml2js.Builder({ renderOpts: {pretty: false} });
-    let content = this._getContentForXmlBuild();
-    let rawXmlStr = builder.buildObject(content);
+    // import XmlUtil from './xml_util';
+    const builder = new xml2js.Builder({ renderOpts: {pretty: false} });
+    const content = this._getContentForXmlBuild();
+    const rawXmlStr = builder.buildObject(content);
 
     // remove <?xml ....?>
-    let trimmedXmlStr = XmlUtil.removeXmlDeclaration(rawXmlStr);
+    // let trimmedXmlStr = XmlUtil.removeXmlDeclaration(rawXmlStr);
+    const trimmedXmlStr = rawXmlStr.replace(_xmlDeclarePat, "");
 
     return trimmedXmlStr;
+  }
+
+  appendToNode(node) {
+    // used when publish
+    const ret = node.c('device', this.getXmlAttrs());
+
+    for (const tdr of this.metaTransducers) {
+      ret.c('transducer', tdr.getXmlAttrs()).up();
+    }
+
+    return ret;
   }
 
 }
