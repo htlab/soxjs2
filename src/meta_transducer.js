@@ -58,13 +58,21 @@ class MetaTransducer {
     let attrs = {
         name: this.name,
         id: this.tdrId,
-        canActuate: String(this.canActuate()),
-        hasOwnNode: String(this.hasOwnNode()),
+        // canActuate: String(this.canActuate()),
+        // hasOwnNode: String(this.hasOwnNode()),
         // units: this.units,
         // unitScalar: this.unitScalar,
         // minValue: this.minValue,
         // maxValue: this.maxValue,
         // resolution: this.resolution
+    }
+
+    if (this._canActuate !== undefined) {
+      attrs.canActuate = String(this.canActuate());
+    }
+
+    if (this._hasOwnNode !== undefined) {
+      attrs.hasOwnNode = String(this.hasOwnNode());
     }
 
     if (this.units) {

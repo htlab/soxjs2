@@ -13,6 +13,7 @@ var conn = new SoxConnection(soxConfig.boshService, soxConfig.jid, soxConfig.pas
 
 // var dn = '_test1016_3';
 var dn = 'test1016sono4';
+// var dn = 'test1016sono7';
 var domain = conn.getDomain();
 
 
@@ -20,27 +21,6 @@ var domain = conn.getDomain();
 conn.connect(function() {
   console.log("@@@@ create_device_test 1");
   var device = new Device(conn, dn, conn.getDomain());
-  // TODO: meta
-  var hogeTransducer = new MetaTransducer( // TODO
-    device,
-    "hoge",
-    "hoge"
-  );
-  var metaTransducers = [
-    hogeTransducer
-  ];
-  var deviceId = dn;
-  // var deviceType = "hogetype";
-  var deviceType = "indoor weather";
-  var serialNumber = "1";
-  var deviceMeta = new DeviceMeta(
-    device,
-    deviceId,
-    deviceType,
-    serialNumber,
-    metaTransducers
-  );
-  console.log("@@@@ create_device_test 2");
 
   var suc = function() {
     console.log("\n\n@@@@ suc\n\n");
@@ -49,13 +29,6 @@ conn.connect(function() {
   var err = function() {
     console.log("\n\n@@@@ err\n\n");
   };
-  console.log("@@@@ create_device_test 3");
 
-  conn.createDevice(
-    device,
-    deviceMeta,
-    suc,
-    err
-  );
-  console.log("@@@@ create_device_test 4");
+  conn.deleteDevice(device, suc, err);
 });

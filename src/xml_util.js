@@ -28,7 +28,7 @@ const XmlUtil = {
     }
 
     let log = (msg) => {
-      console.log(sp + msg);
+      //console.log(sp + msg);
     };
 
     log("---tag: " + tagName);

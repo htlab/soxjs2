@@ -18,7 +18,9 @@ class DeviceMeta {
     return {
       id: this.deviceId,
       type: this.deviceType,
-      serialNumber: this.serialNumber
+      serialNumber: this.serialNumber,
+      name: this.device.getName(),
+      xmlns: 'http://jabber.org/protocol/sox'
     };
   }
 

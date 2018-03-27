@@ -25,20 +25,49 @@ class SoxConnection {
     this._isConnected = false;
     this._dataCallbacks = {};
     this._metaCallbacks = {};
+
+    this._connEventCallbacks = {};
   }
 
   _stropheOnRawInput(data) {
-    console.log("<<<<<< input");
-    console.log(data);
+    //console.log("<<<<<< input");
+    //console.log(data);
   }
 
   _stropheOnRawOutput(data) {
-    console.log(">>>>>> output");
-    console.log(data);
+    //console.log(">>>>>> output");
+    //console.log(data);
+  }
+
+  addConnectionEventListner(listener, listenerId) {
+    if (listenerId === undefined) {
+      listenerId = this._genRandomId();
+    }
+
+    this._connEventCallbacks[listenerId] = listener;
+    return listenerId;
+  }
+
+  _callConnEvent(methodName) {
+    const callbacks = this._connEventCallbacks;
+    for (const callbackId of Object.keys(callbacks)) {
+      const listener = callbacks[callbackId];
+      const callback = listener[methodName];
+      try {
+        if (callback === undefined) {
+          console.warn('callbackId=' + callbackId + " has not such method: " + methodName);
+
+        } else {
+          callback();
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
   }
 
   _stropheOnConnConnecting() {
-
+    this._callConnEvent('onConnecting');
   }
 
   _stropheOnConnConnected() {
@@ -94,10 +123,11 @@ class SoxConnection {
       // console.log("### connected 3-2");
     }
     // console.log("### connected 4 end");
+    this._callConnEvent('onConnected');
   }
 
   _stropheOnConnDisconnecting() {
-
+    this._callConnEvent('onDisconnecting');
   }
 
   _stropheOnConnDisconnected() {
@@ -106,10 +136,11 @@ class SoxConnection {
     if (this._onDisconnectCallback) {
       this._onDisconnectCallback();
     }
+    this._callConnEvent('onDisconnected');
   }
 
   _stropheOnConnFaill() {
-
+    this._callConnEvent('onFail');
   }
 
   _stropheOnConnectionStatusUpdate(status) {
@@ -583,37 +614,69 @@ class SoxConnection {
   }
 
   createDevice(device, meta, cbSuccess, cbFailed) {
-    const domain = device.getDomain();
-    const metaNode = device.getMetaNodeName();
-    const dataNode = device.getDataNodeName();
-    const that = this;
-    this._createNode(
-        metaNode,
-        domain,
-        (iq) => {
-          this._createNode(dataNode, domain, (iq2) => {
-            // TODO: send meta to meta node
-
-          }, cbFailed);
-        },
-        cbFailed
-    );
+    try {
+      const domain = device.getDomain();
+      const metaNode = device.getMetaNodeName();
+      const dataNode = device.getDataNodeName();
+      const that = this;
+      this._createNode(
+          metaNode,
+          domain,
+          (iq) => {
+            that._createNode(dataNode, domain, (iq2) => {
+              // TODO: send meta to meta node
+              that._publishToNode(
+                metaNode,
+                device.getDomain(),
+                meta,
+                cbSuccess,
+                cbFailed
+              );
+            }, cbFailed);
+          },
+          cbFailed
+      );
+    } catch (e) {
+      console.log(e.stack);
+    }
   }
 
   _createNode(nodeName, domain, cbSuccess, cbFailed) {
-    console.log("\n\n---- _createNode");
+    // console.log("\n\n---- _createNode");
     const service = 'pubsub.' + domain;
     const conn = this._rawConn;
     const uniqueId = conn.getUniqueId('pubsub');
-    console.log("\n\n---- _createNode2");
+    // console.log("\n\n---- _createNode2");
     try {
-      const iq = $iq({ to: service, type: 'set', id: uniqueId, from: conn.jid })
+      // const iq = $iq({ to: service, type: 'set', id: uniqueId, from: conn.jid })
+      //   .c('pubsub', { xmlns: PUBSUB_NS })
+      //   .c('create', { node: nodeName });
+      const iq = ($iq({ to: service, type: 'set', id: uniqueId, from: conn.jid })
         .c('pubsub', { xmlns: PUBSUB_NS })
-        .c('create', { node: nodeName });
-      console.log("\n\n---- _createNode3");
+        .c('create', { node: nodeName })
+        .c('configure')
+        .c('x', { xmlns: 'jabber:x:data', type: 'submit' })
+        .c('field', { var: 'pubsub#access_model', type: 'list-single'})
+        .c('value')
+        .t('open')
+        .up().up()
+        .c('field', { var: 'pubsub#publish_model', type: 'list-single' })
+        .c('value')
+        .t('open')
+        .up().up()
+        .c('field', { var: 'pubsub#persist_items', type: 'boolean' })
+        .c('value')
+        .t('1')
+        .up().up()
+        .c('field', { var: 'pubsub#max_items', type: 'text-single' })
+        .c('value')
+        .t('1')
+
+      );
+      // console.log("\n\n---- _createNode3");
 
       conn.sendIQ(iq, cbSuccess, cbFailed);
-      console.log("\n\n---- _createNode4");
+      // console.log("\n\n---- _createNode4");
     } catch (e) {
       console.log(e.stack);
     }
@@ -635,6 +698,31 @@ class SoxConnection {
     conn.sendIQ(iq, cbSuccess, cbFailed);
   }
 
+  deleteDevice(device, cbSuccess, cbFailed) {
+    const domain = device.getDomain();
+    const metaNode = device.getMetaNodeName();
+    const dataNode = device.getDataNodeName();
+    const that = this;
+    this._deleteNode(
+      metaNode,
+      domain,
+      (iq) => {
+        that._deleteNode(dataNode, domain, cbSuccess, cbFailed);
+      },
+      (iq) => {
+        cbFailed(iq);
+        that._deleteNode(dataNode, domain, (iq2)=>{}, (iq2)=>{});
+      }
+    );
+  }
+
+  publish(data, cbSuccess, cbFailed) {
+    const device = data.getDevice();
+    const domain = device.getDomain();
+    const dataNode = device.getDataNodeName();
+    this._publishToNode(dataNode, domain, data, cbSuccess, cbFailed);
+  }
+
   _publishToNode(nodeName, domain, publishContent, cbSuccess, cbFailed) {
     // expects publishContent as an instance of DeviceMeta or Data
     try {
@@ -653,33 +741,9 @@ class SoxConnection {
         publishContent.appendToNode(iq);
 
         conn.sendIQ(iq, cbSuccess, cbFailed);
-
     } catch (e) {
         console.error(e.stack);
-
     }
-  }
-
-  deleteDevice(device, cbSuccess, cbFailed) {
-    // // TODO; このコードは動作確認できてない
-    const domain = device.getDomain();
-    const metaNode = device.getMetaNodeName();
-    const dataNode = device.getDataNodeName();
-    const that = this;
-    this._deleteNode(
-      metaNode,
-      domain,
-      (iq) => {
-        that._deleteNode(dataNode, cbSuccess, cbFailed);
-      },
-      cbFailed
-    );
-  }
-
-  publish(device, data) {
-    let xmlString = data.toXmlString();
-    let node = device.getDataNodeName();
-    this._rawConn.PubSub.publish(node, [xmlString]);
   }
 
   _genRandomId() {
