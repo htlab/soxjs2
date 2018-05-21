@@ -2,7 +2,7 @@
   "name": "soxjs2",
   "version": "0.0.3",
   "description": "Sensor-over-XMPP library",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
     "build": "babel ./src --out-dir ./lib --source-maps inline",
     "test": "mocha --compilers js:babel-register"
