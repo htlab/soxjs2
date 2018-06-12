@@ -143,8 +143,14 @@ let SoxUtil = {
         // console.log('### attrNames=' + JSON.stringify(attrNames));
 
         let transducerId = attrs['id']._valueForAttrModified;
-        let rawValue = attrs['rawValue']._valueForAttrModified;
-        let typedValue = attrs['typedValue']._valueForAttrModified;
+        let rawValue = null;
+        if (attrs['rawValue'] !== undefined) {
+          rawValue = attrs['rawValue']._valueForAttrModified;
+        }
+        let typedValue = null;
+        if (attrs['typedValue'] !== undefined) {
+          typedValue = attrs['typedValue']._valueForAttrModified;
+        }
         var timestamp = attrs['timestamp']._valueForAttrModified;
 
         if (timestamp) {
