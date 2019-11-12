@@ -19,14 +19,27 @@ var domain = conn.getDomain();
 var accessModel = 'open' // 'open' or 'whitelist'
 var affaliate = ['mina@sox.ht.sfc.keio.ac.jp', 'takuro@sox.ht.sfc.keio.ac.jp']
 conn.connect(function () {
-  var suc = function () {
-    console.log("\n\n@@@@ suc\n\n");
+
+  // affaliate callback
+  var sucAf = function () {
+    console.log("\n\n@@@@ suc affaliate\n\n");
+  }
+  var errAf = function () {
+    console.log("\n\n@@@@ err affaliate\n\n");
   };
 
-  var err = function () {
-    console.log("\n\n@@@@ err\n\n");
+  // accessModel callback
+  var sucAm = function () {
+    console.log("\n\n@@@@ suc accessModel\n\n");
+    if (accessModel == 'whitelist') {
+      conn.setAffaliation(dn, domain, affaliate, sucAf, errAf)
+    }
   };
 
-  conn.setAccessPermission(dn, domain, accessModel, affaliate, suc, err)
+  var errAm = function () {
+    console.log("\n\n@@@@ err accessModel\n\n");
+  };
+
+  conn.setAccessPermission(dn, domain, accessModel, sucAm, errAm)
 
 });
