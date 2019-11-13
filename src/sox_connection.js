@@ -299,7 +299,7 @@ class SoxConnection {
       let listenerId = this._genRandomId();
       let metaNode = device.getMetaNodeName();
       let _callback = (meta) => {
-        that._unsubNode(device.getMetaNodeName(), device.getDomain(), () => {});
+        that._unsubNode(device.getMetaNodeName(), device.getDomain(), () => { });
         callback(meta);
       }
       let service = "pubsub." + this.getDomain();
@@ -322,16 +322,17 @@ class SoxConnection {
           let err2 = (iq) => {
             // console.log("\n\nrecent request failed?\n\n");
           };
-          that._rawConn.sendIQ(iq2, suc2, err2);do {
+          that._rawConn.sendIQ(iq2, suc2, err2); do {
 
-          } while (true); } else {
+          } while (true);
+        } else {
           // first we need to sub
           // console.log("\n\n\n@@@@@ no our sub info, going to sub!\n\n\n");
           let rawJid = this._rawConn.jid;
           let bareJid = Strophe.Strophe.getBareJidFromJid(this._rawConn.jid);
           let subIq = $iq({ to: service, type: "set", id: this._rawConn.getUniqueId("pubsub") })
             .c('pubsub', { xmlns: "http://jabber.org/protocol/pubsub" })
-            .c('subscribe', {node: metaNode, jid: rawJid});
+            .c('subscribe', { node: metaNode, jid: rawJid });
 
           const subSuc = (iq) => {
             // console.log("\n\n@@@@ sub success, going to fetch subscriptions to get subid");
@@ -356,11 +357,11 @@ class SoxConnection {
               that._rawConn.sendIQ(iq3, suc3, err3);
             });
           }
-          that._rawConn.sendIQ(subIq, subSuc, () => {});
+          that._rawConn.sendIQ(subIq, subSuc, () => { });
         }
       };
       this._getSubscription(device.getMetaNodeName(), device.getDomain(), cb);
-    } catch(e) {
+    } catch (e) {
       console.log(e.stack);
     }
   }
@@ -377,7 +378,7 @@ class SoxConnection {
     let service = "pubsub." + domain;
     let uniqueId = this._rawConn.getUniqueId("pubsub");
     let iq = $iq({ type: "get", from: this._rawConn.jid, to: service, id: uniqueId })
-      .c("pubsub", {xmlns: PUBSUB_NS})
+      .c("pubsub", { xmlns: PUBSUB_NS })
       .c("subscriptions");
 
     let suc = (iq) => {
@@ -487,7 +488,7 @@ class SoxConnection {
     let bareJid = Strophe.Strophe.getBareJidFromJid(this._rawConn.jid);
     let iq = $iq({ to: service, type: "set", id: this._rawConn.getUniqueId("pubsub") })
       .c('pubsub', { xmlns: "http://jabber.org/protocol/pubsub" })
-      .c('subscribe', {node: node, jid: rawJid});
+      .c('subscribe', { node: node, jid: rawJid });
 
     let suc = (iq) => {
       // https://xmpp.org/extensions/xep-0060.html#subscriber-retrieve-requestrecent
@@ -553,7 +554,7 @@ class SoxConnection {
             return cb;
           }
           return () => {
-            that._unsubNode(dataNode, domain, delNextFunc(i+1), subids[i]);
+            that._unsubNode(dataNode, domain, delNextFunc(i + 1), subids[i]);
             // console.log("@@@ _unsubNode called for subid=" + subids[i]);
           }
         };
@@ -620,21 +621,21 @@ class SoxConnection {
       const dataNode = device.getDataNodeName();
       const that = this;
       this._createNode(
-          metaNode,
-          domain,
-          (iq) => {
-            that._createNode(dataNode, domain, (iq2) => {
-              // TODO: send meta to meta node
-              that._publishToNode(
-                metaNode,
-                device.getDomain(),
-                meta,
-                cbSuccess,
-                cbFailed
-              );
-            }, cbFailed);
-          },
-          cbFailed
+        metaNode,
+        domain,
+        (iq) => {
+          that._createNode(dataNode, domain, (iq2) => {
+            // TODO: send meta to meta node
+            that._publishToNode(
+              metaNode,
+              device.getDomain(),
+              meta,
+              cbSuccess,
+              cbFailed
+            );
+          }, cbFailed);
+        },
+        cbFailed
       );
     } catch (e) {
       console.log(e.stack);
@@ -656,7 +657,7 @@ class SoxConnection {
         .c('create', { node: nodeName })
         .c('configure')
         .c('x', { xmlns: 'jabber:x:data', type: 'submit' })
-        .c('field', { var: 'pubsub#access_model', type: 'list-single'})
+        .c('field', { var: 'pubsub#access_model', type: 'list-single' })
         .c('value')
         .t('open')
         .up().up()
@@ -689,10 +690,10 @@ class SoxConnection {
     // const bareJid = Strophe.Strophe.getBareJidFromJid(conn.jid);
     // const fromJid = conn.
     const iq = (
-    // const iq = $iq({ to: service, type: 'set', id: uniqueId, from: bareJid })
+      // const iq = $iq({ to: service, type: 'set', id: uniqueId, from: bareJid })
       $iq({ to: service, type: 'set', id: uniqueId, from: conn.jid })
-      .c('pubsub', { xmlns: PUBSUB_OWNER_NS })
-      .c('delete', { node: nodeName })
+        .c('pubsub', { xmlns: PUBSUB_OWNER_NS })
+        .c('delete', { node: nodeName })
     );
 
     conn.sendIQ(iq, cbSuccess, cbFailed);
@@ -711,7 +712,7 @@ class SoxConnection {
       },
       (iq) => {
         cbFailed(iq);
-        that._deleteNode(dataNode, domain, (iq2)=>{}, (iq2)=>{});
+        that._deleteNode(dataNode, domain, (iq2) => { }, (iq2) => { });
       }
     );
   }
@@ -726,23 +727,23 @@ class SoxConnection {
   _publishToNode(nodeName, domain, publishContent, cbSuccess, cbFailed) {
     // expects publishContent as an instance of DeviceMeta or Data
     try {
-        const service = 'pubsub.' + domain;
-        const conn = this._rawConn;
-        const uniqueId = conn.getUniqueId('pubsub');
-        const itemUniqueId = conn.getUniqueId('item');
-        const iq = (
-          $iq({ to: service, type: 'set', id: uniqueId, from: conn.jid })
+      const service = 'pubsub.' + domain;
+      const conn = this._rawConn;
+      const uniqueId = conn.getUniqueId('pubsub');
+      const itemUniqueId = conn.getUniqueId('item');
+      const iq = (
+        $iq({ to: service, type: 'set', id: uniqueId, from: conn.jid })
           .c('pubsub', { xmlns: PUBSUB_NS })
           .c('publish', { node: nodeName })
           .c('item', { id: itemUniqueId })
-          // .cnode(publishContent)
-        );
+        // .cnode(publishContent)
+      );
 
-        publishContent.appendToNode(iq);
+      publishContent.appendToNode(iq);
 
-        conn.sendIQ(iq, cbSuccess, cbFailed);
+      conn.sendIQ(iq, cbSuccess, cbFailed);
     } catch (e) {
-        console.error(e.stack);
+      console.error(e.stack);
     }
   }
 
@@ -809,6 +810,46 @@ class SoxConnection {
       }
     }
   }
+
+  setAccessPermission(nodeName, domain, accessModel, cbSuccess, cbFailed) {
+    try {
+      var service = 'pubsub.' + domain;
+      var conn = this._rawConn;
+      var uniqueId = conn.getUniqueId('pubsub');
+
+      var iq = $iq({ to: service, type: 'set', id: uniqueId, from: conn.jid }).c(
+        'pubsub', { xmlns: PUBSUB_OWNER_NS }).c(
+          'configure', { node: nodeName }).c(
+            'x', { xmlns: 'jabber:x:data', type: 'submit' }).c(
+              'field', { var: 'pubsub#access_model', type: 'list-single' }).c(
+                'value').t(accessModel)
+      conn.sendIQ(iq, cbSuccess, cbFailed);
+
+    } catch (e) {
+      console.error(e.stack);
+    }
+  }
+
+  setAffaliation(nodeName, domain, affaliation, cbSuccess, cbFailed) {
+    try {
+      var service = 'pubsub.' + domain;
+      var conn = this._rawConn;
+      var uniqueId = conn.getUniqueId('pubsub');
+
+      var iq = $iq({ to: service, type: 'set', id: uniqueId, from: conn.jid }).c(
+        'pubsub', { xmlns: PUBSUB_OWNER_NS }).c(
+          'affiliations', { node: nodeName })
+
+      for (var i = 0; i < affaliation.length; i++) {
+        iq.c('affiliation', { xmlns: PUBSUB_OWNER_NS, jid: affaliation[i], affiliation: 'none' }).up()
+      }
+      conn.sendIQ(iq, cbSuccess, cbFailed);
+
+    } catch (e) {
+      console.error(e.stack);
+    }
+  }
+
 
 }
 
