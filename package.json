@@ -1,6 +1,6 @@
 {
   "name": "soxjs2",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Sensor-over-XMPP library",
   "main": "lib/index.js",
   "scripts": {
