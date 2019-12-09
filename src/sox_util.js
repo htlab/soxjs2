@@ -133,6 +133,8 @@ let SoxUtil = {
       let tagName = tdrTag._localName;
 
       // come in 'transducerValue' and 'transducervalue'
+      // FIXME: Snake case becomes lowercase in node-strophe specification
+      // if you fix this, customize to 'node-strophe'
       if (tagName !== 'transducerValue' && tagName !== 'transducervalue') {
         // console.log('### tagName !== transducerV(v)alue, skipping: name=' + tagName);
         continue;
@@ -159,6 +161,8 @@ let SoxUtil = {
       }
 
       // if lowercase ============================
+      // FIXME: Snake case becomes lowercase in node-strophe specification
+      // if you fix this, customize to 'node-strophe'
       if (attrs['rawvalue'] !== undefined) {
         rawValue = attrs['rawvalue']._valueForAttrModified;
       }
